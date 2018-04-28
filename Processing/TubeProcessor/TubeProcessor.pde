@@ -1,14 +1,22 @@
 import processing.sound.*;
 import processing.serial.*;
 import controlP5.*;
+import ddf.minim.*;
+import ddf.minim.analysis.*;
 
 ControlP5 cp5;
 Knob gain;
 
-FFT fft;
+processing.sound.FFT fft;
 AudioIn in;
-int bands = 512;
-float[] spectrum = new float[bands];
+
+Minim minim;
+AudioInput audio_in;
+BeatDetect beat;
+
+int number_of_frequency_bands = 512;
+int runtime;
+float[] spectrum = new float[number_of_frequency_bands];
 float globalGain = 1000;
 int globalModulate = 0;       // 0 - use tube property, 1 - amplitude, 2 - brightness
 color lowTubeColour;
@@ -18,8 +26,11 @@ int r = 11;
 int g = 143;
 int b = 213;
 
-float[] tubeValues = new float[25];
+int count = 250;
+int threshold = 100;
 
+float[] tubeValues = new float[25];
+float onsetGain;
 int colour = 0xFF0000;
 
 Serial myPort;
@@ -27,13 +38,17 @@ byte[] tubeVals = new byte[25];
 
 float updateTube(int n, int fLB, int fUB, color colour, float gain){
   
+  gain = gain * onsetGain;
+  
   if(fUB < fLB){
     print("Error: fUB is smaller than fLB");
     return 0.0;
   }
   
   // Convert f to bins
-  float fPerBin = 20000/bands;
+  float fPerBin = 20000/number_of_frequency_bands;
+  
+  //
   int fLBBin = ceil(fLB/fPerBin);
   int fUBBin = ceil(fUB/fPerBin);
   
@@ -61,9 +76,27 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
     }
     
   }
-
+  
+  if ( count == 0 )
+  {
+    //print("%d\n", binMag);
+    count = 250;
+  }
+  else
+  {
+    count--;
+  }
+  
+  
+  float binMagColour = binMag * 128;
+  
+  if (binMagColour > 255)
+  {
+    binMagColour = 255;
+  }
+  
   // Draw rectangles
-  fill(colour, binMag);
+  fill(colour, binMagColour);
   rect(30+(100*(n%5)), 100*(floor(n/5)+1), 50, 50);
   fill(colour);
   text("ID: " + n, 30+(100*(n%5)), 100*(floor(n/5)+1)-30);
@@ -103,17 +136,25 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
 
 void setup() {
   
-  frameRate(200);
+  frameRate(50);
   printArray(Serial.list());
   //myPort = new Serial(this, Serial.list()[3], 115200);
 
   size(660, 600);
   background(0);
   
+  minim = new Minim(this);
+  audio_in = minim.getLineIn();
+  // a beat detection object song SOUND_ENERGY mode with a sensitivity of 10 milliseconds
+  beat = new BeatDetect();
+  beat.detectMode(BeatDetect.SOUND_ENERGY);
+  beat.setSensitivity(200);
+  
     
   // Create an Input stream which is routed into the Amplitude analyzer
-  fft = new FFT(this, bands);
+  fft = new processing.sound.FFT(this, number_of_frequency_bands);
   in = new AudioIn(this, 0);
+  
   
   // start the Audio Input
   in.start();
@@ -144,57 +185,68 @@ void setup() {
 }      
 
 void draw() { 
+  
   background(0);
   fft.analyze(spectrum);
   
   in.amp(gain.getValue() / 100.0);
-  
+ 
   lowTubeColour = color(255,0,0);
   midTubeColour = color(255,0,125);
   highTubeColour = color(125,100,255);
 
+  beat.detect(audio_in.mix);
+  if ( beat.isOnset() )
+  {
+    onsetGain = 2;
+  }
+  
+  if ( onsetGain > 0.1 )
+  {
+  onsetGain = onsetGain * 0.5;
+  }
   //updateTube(int n, int fLB, int fUB, color colour, float gain)
    //row 1
-  float subMag = updateTube(0, 1500, 4000, highTubeColour, 30);
-  updateTube(1, 3400, 6000, highTubeColour, 32);
-  float redMag = updateTube(2, 6000, 7000, highTubeColour, 32);
-  float midMag = updateTube(3, 6500, 7200, highTubeColour, 34);
-  float yellowMag = updateTube(4, 7000, 9500, highTubeColour, 30);
+  float subMag = updateTube(0, 1500, 4000, highTubeColour, 10);
+  updateTube(1, 3400, 6000, highTubeColour, 30);
+  float redMag = updateTube(2, 1000, 4000, highTubeColour, 15);
+  float midMag = updateTube(3, 6500, 7200, highTubeColour, 30);
+  float yellowMag = updateTube(4, 7000, 9500, highTubeColour, 10);
   
   // 2
-  float highMag = updateTube(5, 2000, 10000, highTubeColour, 36);
-  updateTube(6, 600, 1000, midTubeColour, 6);
-  updateTube(7, 200, 250, midTubeColour, 4);
-  updateTube(8, 100, 200, midTubeColour, 4);
-  updateTube(9, 4900, 6200, highTubeColour, 26);
+  float highMag = updateTube(5, 2000, 10000, highTubeColour, 30);
+  updateTube(6, 600, 1000, midTubeColour, 5);
+  updateTube(7, 400, 1000, midTubeColour, 10);
+  updateTube(8, 100, 200, midTubeColour, 5);
+  updateTube(9, 4900, 6200, highTubeColour, 30);
   
   // 3
-  updateTube(10, 2000, 3300, highTubeColour, 34);
+  updateTube(10, 2000, 3300, highTubeColour, 30);
   updateTube(11, 110, 220, midTubeColour, 4);
-  updateTube(12, 30, 60, lowTubeColour, 2);
+  updateTube(12, 30, 150, lowTubeColour, 15);
   updateTube(13, 140, 180, midTubeColour, 4);
-  updateTube(14, 3500, 4000, highTubeColour, 32);
+  updateTube(14, 3500, 4000, highTubeColour, 30);
   
   //// 4
-  updateTube(15, 2500, 3000, highTubeColour, 25);
-  updateTube(16, 200, 450, midTubeColour, 4);
-  updateTube(17, 160, 320, midTubeColour, 4);
-  updateTube(18, 300, 600, midTubeColour, 4);
-  updateTube(19, 2100, 2700, highTubeColour, 28);
+  updateTube(15, 2500, 3000, highTubeColour, 30);
+  updateTube(16, 200, 450, midTubeColour, 10);
+  updateTube(17, 150, 400, midTubeColour, 15);
+  updateTube(18, 300, 600, midTubeColour, 10);
+  updateTube(19, 2100, 2700, highTubeColour, 30);
   
   //// 5
-  updateTube(20, 7000, 10000, highTubeColour, 32);
-  updateTube(21, 4000, 4500, highTubeColour, 31);
-  updateTube(22, 6000, 6500, highTubeColour, 34);
-  updateTube(23, 6500, 7500, highTubeColour, 31);
-  updateTube(24, 3000, 15000, highTubeColour, 30);
+  updateTube(20, 7000, 10000, highTubeColour, 10);
+  updateTube(21, 4000, 4500, highTubeColour, 30);
+  updateTube(22, 4000, 9000, highTubeColour, 15);
+  updateTube(23, 6500, 7500, highTubeColour, 30);
+  updateTube(24, 3000, 15000, highTubeColour, 10);
   ////updateTube(25, 600, 1000, highTubeColour, 5);
   ////updateTube(26, 750, 1200, highTubeColour, 7);
   ////updateTube(27, 600, 700, highTubeColour, 8);
   ////updateTube(28, 700, 1150, highTubeColour, 5);
   ////updateTube(29, 1500, 5500, highTubeColour, 10);
   
-  for(int i = 0; i < bands; i++){
+  for(int i = 0; i < number_of_frequency_bands; i++){
   // The result of the FFT is normalized
   // draw the line for frequency band i scaling it up by 5 to get more amplitude.
   stroke(150);
