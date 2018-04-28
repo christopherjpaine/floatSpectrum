@@ -4,13 +4,14 @@ import controlP5.*;
 import ddf.minim.*;
 import ddf.minim.analysis.*;
 
-ControlP5 cp5;
-Knob gain;
+//ControlP5 cp5;
+//Knob gain;
 
 processing.sound.FFT fft;
-AudioIn in;
+//AudioIn sound_audio_in;
 
-Minim minim;
+
+//Minim minim;
 AudioInput audio_in;
 BeatDetect beat;
 
@@ -22,9 +23,9 @@ int globalModulate = 0;       // 0 - use tube property, 1 - amplitude, 2 - brigh
 color lowTubeColour;
 color midTubeColour;
 color highTubeColour;
-int r = 11;
-int g = 143;
-int b = 213;
+int r = 11;  //Not used.
+int g = 143; //Not used.
+int b = 213; //Not used.
 
 int count = 250;
 int threshold = 100;
@@ -55,6 +56,9 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
   float binAvg = 0;
   
   // Get average of bins
+  // Would it be possible for the average to exclude outliers without eating
+  // loads of processing time? Maybe some calculation of whats above the 
+  // noise floor so we don't include too many bands which contain no information.
   for(int i = fLBBin; i <= fUBBin; i++){
     binAvg = binAvg + spectrum[i];
   }
@@ -76,6 +80,7 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
     }
     
   }
+
   
   if ( count == 0 )
   {
@@ -125,6 +130,9 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
   //myPort.write(green_byte);
   //myPort.write(blue_byte);
   
+  
+  /* Calculate Value to Send to Tubes, Only Sending the Magnitude
+   * Colour of the tubes is defined in the arduino sketch. */
   float binMult = binMag/255.0;
   if(binMult > 1) binMult = 1;
   byte binMag_byte = (byte)floor(0xFF * binMult);
@@ -153,35 +161,16 @@ void setup() {
     
   // Create an Input stream which is routed into the Amplitude analyzer
   fft = new processing.sound.FFT(this, number_of_frequency_bands);
-  in = new AudioIn(this, 0);
+  sound_audio_in = new AudioIn(this, 0);
   
   
   // start the Audio Input
-  in.start();
+  sound_audio_in.start();
   
   // patch the AudioIn
-  fft.input(in);
+  fft.input(sound_audio_in);
   
-  cp5 = new ControlP5(this);
-   gain = cp5.addKnob("gain")
-               .setRange(0,200)
-               .setValue(100)
-               .setPosition(525,70)
-               .setRadius(50)
-               .setDragDirection(Knob.VERTICAL)
-               ;
-               
-  cp5.addBang("Dark")
-     .setValue(0)
-     .setPosition(525,200)
-     .setSize(100,30)
-     ;
-  
-  cp5.addBang("Bright")
-     .setValue(0)
-     .setPosition(525,250)
-     .setSize(100,30)
-     ;
+  UI_Init();
 }      
 
 void draw() { 
@@ -189,7 +178,7 @@ void draw() {
   background(0);
   fft.analyze(spectrum);
   
-  in.amp(gain.getValue() / 100.0);
+  sound_audio_in.amp(gain.getValue() / 100.0);
  
   lowTubeColour = color(255,0,0);
   midTubeColour = color(255,0,125);
@@ -203,7 +192,7 @@ void draw() {
   
   if ( onsetGain > 0.1 )
   {
-  onsetGain = onsetGain * 0.5;
+  onsetGain = onsetGain * 0.7;
   }
   //updateTube(int n, int fLB, int fUB, color colour, float gain)
    //row 1
@@ -257,4 +246,6 @@ void draw() {
 
 void serialEvent(Serial myPort) {
   myPort.write(tubeVals);  
+  /* If colour has been updated then send colour command */
+  /* For Tube Vals we need to somehow precede it with a command byte */
 }
