@@ -156,7 +156,7 @@ void setup() {
   // a beat detection object song SOUND_ENERGY mode with a sensitivity of 10 milliseconds
   beat = new BeatDetect();
   beat.detectMode(BeatDetect.SOUND_ENERGY);
-  beat.setSensitivity(200);
+  beat.setSensitivity(50);
   
     
   // Create an Input stream which is routed into the Amplitude analyzer
