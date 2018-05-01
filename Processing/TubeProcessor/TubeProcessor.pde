@@ -196,39 +196,39 @@ void draw() {
   }
   //updateTube(int n, int fLB, int fUB, color colour, float gain)
    //row 1
-  float subMag = updateTube(0, 1500, 4000, highTubeColour, 10);
-  updateTube(1, 3400, 6000, highTubeColour, 30);
-  float redMag = updateTube(2, 1000, 4000, highTubeColour, 15);
-  float midMag = updateTube(3, 6500, 7200, highTubeColour, 30);
-  float yellowMag = updateTube(4, 7000, 9500, highTubeColour, 10);
+  //float subMag = updateTube(0, 1500, 4000, highTubeColour, 10);
+  updateTube(1, 452, 640, highTubeColour, 20);
+  float redMag = updateTube(2, 640, 904, highTubeColour, 20);
+  float midMag = updateTube(3, 904, 1280, highTubeColour, 20);
+  float yellowMag = updateTube(4, 1280, 1806, highTubeColour, 20);
   
   // 2
-  float highMag = updateTube(5, 2000, 10000, highTubeColour, 30);
-  updateTube(6, 600, 1000, midTubeColour, 5);
-  updateTube(7, 400, 1000, midTubeColour, 10);
-  updateTube(8, 100, 200, midTubeColour, 5);
-  updateTube(9, 4900, 6200, highTubeColour, 30);
+  //float highMag = updateTube(5, 2000, 10000, highTubeColour, 30);
+  updateTube(6, 320, 452, midTubeColour, 20);
+  updateTube(7, 28, 40, midTubeColour, 20);
+  updateTube(8, 40, 56, midTubeColour, 20);
+  updateTube(9, 1806, 2554, highTubeColour, 20);
   
   // 3
-  updateTube(10, 2000, 3300, highTubeColour, 30);
-  updateTube(11, 110, 220, midTubeColour, 4);
-  updateTube(12, 30, 150, lowTubeColour, 15);
-  updateTube(13, 140, 180, midTubeColour, 4);
-  updateTube(14, 3500, 4000, highTubeColour, 30);
+  //updateTube(10, 2000, 3300, highTubeColour, 30);
+  updateTube(11, 226, 320, midTubeColour, 20);
+  updateTube(12, 20 , 28, lowTubeColour, 20);
+  updateTube(13, 56, 80, midTubeColour, 20);
+  updateTube(14, 2554, 3612, highTubeColour, 20);
   
   //// 4
-  updateTube(15, 2500, 3000, highTubeColour, 30);
-  updateTube(16, 200, 450, midTubeColour, 10);
-  updateTube(17, 150, 400, midTubeColour, 15);
-  updateTube(18, 300, 600, midTubeColour, 10);
-  updateTube(19, 2100, 2700, highTubeColour, 30);
+  //updateTube(15, 2500, 3000, highTubeColour, 30);
+  updateTube(16, 160, 226, midTubeColour, 10);
+  updateTube(17, 113, 160, midTubeColour, 15);
+  updateTube(18, 80, 113, midTubeColour, 10);
+  updateTube(19, 3612, 5107, highTubeColour, 30);
   
   //// 5
-  updateTube(20, 7000, 10000, highTubeColour, 10);
-  updateTube(21, 4000, 4500, highTubeColour, 30);
-  updateTube(22, 4000, 9000, highTubeColour, 15);
-  updateTube(23, 6500, 7500, highTubeColour, 30);
-  updateTube(24, 3000, 15000, highTubeColour, 10);
+  //updateTube(20, 7000, 10000, highTubeColour, 10);
+  updateTube(21, 14440, 18000, highTubeColour, 20);
+  updateTube(22, 10212, 14440, highTubeColour, 20);
+  updateTube(23, 7222, 10212, highTubeColour, 20);
+  updateTube(24, 5107, 7222, highTubeColour, 20);
   ////updateTube(25, 600, 1000, highTubeColour, 5);
   ////updateTube(26, 750, 1200, highTubeColour, 7);
   ////updateTube(27, 600, 700, highTubeColour, 8);
