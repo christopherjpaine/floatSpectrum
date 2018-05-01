@@ -70,16 +70,16 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
   float alpha = 0.595;
   binMag = (1-alpha) * tubeValues[n] + alpha * binMag;
 
-  if (mousePressed == true) {
-    if(mouseX < 625 && mouseX > 525 && mouseY > 200 && mouseY < 230) {
-      binMag = 0;
-    }
+  //if (mousePressed == true) {
+  //  if(mouseX < 625 && mouseX > 525 && mouseY > 200 && mouseY < 230) {
+  //    binMag = 0;
+  //  }
     
-    if(mouseX < 625 && mouseX > 525 && mouseY > 250 && mouseY < 280) {
-      binMag = 255;
-    }
+  //  if(mouseX < 625 && mouseX > 525 && mouseY > 250 && mouseY < 280) {
+  //    binMag = 255;
+  //  }
     
-  }
+  //}
 
   
   if ( count == 0 )
@@ -187,12 +187,12 @@ void draw() {
   beat.detect(audio_in.mix);
   if ( beat.isOnset() )
   {
-    onsetGain = 2;
+    onsetGain = onset_gain.getValue();
   }
   
   if ( onsetGain > 0.1 )
   {
-  onsetGain = onsetGain * 0.7;
+  onsetGain = onsetGain * onset_gain_decay.getValue();
   }
   //updateTube(int n, int fLB, int fUB, color colour, float gain)
    //row 1

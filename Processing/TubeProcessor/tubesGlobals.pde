@@ -32,7 +32,7 @@ ddf.minim.analysis.FFT minim_fft;
 /* == User interface Objects ===============================
  * - Gain
  *========================================================*/
- 
 Knob gain;
-
+Knob onset_gain;
+Knob onset_gain_decay;
 //Tube Brightness Variables
