@@ -1,15 +1,17 @@
 #include <Boards.h>
 
 #define USE_HSV
-#include <WS2812.h>
+#include "WS2812.h"
 
-#define DATA_PIN    8
-#define NUM_LEDS    300
-#define NUM_TUBES   25
+//#define RAINBOW_MODE
+
+#define DATA_PIN    7
+#define NUM_LEDS    150
+#define NUM_TUBES   20
 
 WS2812 LED(NUM_LEDS); 
 
-byte byteBuffer[NUM_TUBES*3]; 
+byte byteBuffer[NUM_TUBES*3];  //Think this only needs to be NUM_TUBES but we'll see
 cRGB value;
 cRGB z;
 int i = 0;
@@ -40,12 +42,13 @@ int hsv_vals[NUM_TUBES][3] = {
   {60,255,255},
   {60,255,255},
   {240,180,255},
-
+/*
   {240,180,255},
   {240,180,255},
   {240,180,255},
   {240,180,255},
   {240,180,255}
+  */
 };
 
 void setup() {
@@ -53,13 +56,18 @@ void setup() {
   LED.setOutput(DATA_PIN);  
 
   Serial.begin(115200);
-     
-    for(int j = 0; j < 25; j++){
+  int hue = 0;
+
+  for(int j = 0; j < 150; j++){
           cRGB colour;
-          colour.SetHSV(hsv_vals[j][0], hsv_vals[j][1], hsv_vals[j][2]);
-          for(int k = 0; k < 12; k++){
-            LED.set_crgb_at((12*j)+k, colour);
+          //hue = hueOffset + j;
+          hue = j * 2;
+          if ( hue == 255 )
+          {
+            hue = 0;
           }
+          colour.SetHSV(hue, 255, 127);
+            LED.set_crgb_at(j, colour);
      }
 
   LED.sync();
@@ -75,43 +83,75 @@ void requestData() {
 
 void loop()
 {
-      /* Delay while there is no data available to read */
-      requestData();
 
-      /* If we wanted to transmit colour changes from processing to the arduino,
-       *  we would want a command signature byte, possibly made up of the tube 
-       *  number and a command number. Depending on the command number we would 
-       *  then read X more bytes which would provide the data for that command.
-       *  It would be easier to update groups of tubes at a time, rather than
-       *  individual. Perhaps 5/6 modifiable colours that we can program from
-       *  processing, but tubes are allocated a colour to follow at compilation.
-       */
-       
-      /* Data is available, read it and translate each byte into tube brightness */
-      if(Serial.available() > 0){
-            Serial.readBytes(byteBuffer, NUM_TUBES);
-            for(int i = 0; i < NUM_TUBES; i++){
-              unsigned int brightness = (unsigned int)byteBuffer[i];
-              brightness = brightness * 2;
-              if(brightness > 255) brightness = 255; 
-              hsv_vals[i][2] = brightness; // Update brightness
-            }            
-          }
+#ifdef RAINBOW_MODE
 
-    /* Prepare Colour to be sent using the LED library */
-    for(int j = 0; j < NUM_TUBES; j++){
+  static int hueOffset = 0;
+  static int hue = 0;
+  
+  for(int j = 0; j < 150; j++){
           cRGB colour;
-          colour.SetHSV(hsv_vals[j][0], hsv_vals[j][1], hsv_vals[j][2]);
-          for(int k = 0; k < 12; k++){
-            LED.set_crgb_at((12*j)+k, colour);
+          hue = hueOffset + j;
+          if ( hue == 255 )
+          {
+            hue = 0;
           }
+          colour.SetHSV((hue + j), 255, 127);
+            LED.set_crgb_at(j, colour);
+     }
+     if ( hueOffset == 255 )
+     {
+        hueOffset = 0;
+     }  
+     else
+     {
+        hueOffset++;
      }
 
-    /* Send the data to the WS2812 */
-    LED.sync();
+     delay(100);
+
+#else   //NORMAL_MODE
+
+    /* Delay while there is no data available to read */
+    requestData();
+
+    /* If we wanted to transmit colour changes from processing to the arduino,
+     *  we would want a command signature byte, possibly made up of the tube 
+     *  number and a command number. Depending on the command number we would 
+     *  then read X more bytes which would provide the data for that command.
+     *  It would be easier to update groups of tubes at a time, rather than
+     *  individual. Perhaps 5/6 modifiable colours that we can program from
+     *  processing, but tubes are allocated a colour to follow at compilation.
+     */
+     
+    /* Data is available, read it and translate each byte into tube brightness */
+    if(Serial.available() > 0){
+          Serial.readBytes(byteBuffer, NUM_TUBES);
+          for(int i = 0; i < NUM_TUBES; i++){
+            unsigned int brightness = (unsigned int)byteBuffer[i];
+            brightness = brightness * 2;
+            if(brightness > 255) brightness = 255; 
+            hsv_vals[i][2] = brightness; // Update brightness
+          }            
+        }
+
+  /* Prepare Colour to be sent using the LED library */
+  for(int j = 0; j < NUM_TUBES; j++){
+        cRGB colour;
+        colour.SetHSV(hsv_vals[j][0], hsv_vals[j][1], hsv_vals[j][2]);
+        for(int k = 0; k < 8; k++){
+          LED.set_crgb_at((8*j)+k, colour);
+        }
+   }
+
+#endif
+
+  /* Send the data to the WS2812 */
+  LED.sync();
 
 }
 
+#if 0
 void commandInterpreter ( void )
 {
   byte colour[2];
@@ -156,4 +196,6 @@ void receiveColour ( int group_to_update )
   
   
 }
+
+#endif
 

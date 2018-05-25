@@ -35,4 +35,6 @@ ddf.minim.analysis.FFT minim_fft;
 Knob gain;
 Knob onset_gain;
 Knob onset_gain_decay;
+Knob attack_ratio;
+Knob decay_ratio;
 //Tube Brightness Variables

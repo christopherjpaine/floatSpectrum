@@ -15,6 +15,12 @@ processing.sound.FFT fft;
 AudioInput audio_in;
 BeatDetect beat;
 
+float[] binMagPrevious = new float[20];
+
+//Envelope
+float attackRatio;
+float decayRatio;
+
 int number_of_frequency_bands = 512;
 int runtime;
 float[] spectrum = new float[number_of_frequency_bands];
@@ -35,11 +41,18 @@ float onsetGain;
 int colour = 0xFF0000;
 
 Serial myPort;
-byte[] tubeVals = new byte[25]; 
+byte[] tubeVals = new byte[20]; 
 
 float updateTube(int n, int fLB, int fUB, color colour, float gain){
   
-  gain = gain * onsetGain;
+  float attackRatioTemp, decayRatioTemp;
+  
+  //apply onset to Higher Frequency more generously
+  //if ( n > 10) { 
+  gain = gain * onsetGain * ((n+1) * 0.1);
+  //}
+  
+
   
   if(fUB < fLB){
     print("Error: fUB is smaller than fLB");
@@ -48,13 +61,10 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
   
   // Convert f to bins
   float fPerBin = 20000/number_of_frequency_bands;
-  
   //
   int fLBBin = ceil(fLB/fPerBin);
   int fUBBin = ceil(fUB/fPerBin);
-  
   float binAvg = 0;
-  
   // Get average of bins
   // Would it be possible for the average to exclude outliers without eating
   // loads of processing time? Maybe some calculation of whats above the 
@@ -62,36 +72,39 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
   for(int i = fLBBin; i <= fUBBin; i++){
     binAvg = binAvg + spectrum[i];
   }
-  
   float binMag = (binAvg/(fUBBin-fLBBin+1));
   binMag = binMag * globalGain * gain;
   
-  // avg out
-  float alpha = 0.595;
-  binMag = (1-alpha) * tubeValues[n] + alpha * binMag;
-
-  //if (mousePressed == true) {
-  //  if(mouseX < 625 && mouseX > 525 && mouseY > 200 && mouseY < 230) {
-  //    binMag = 0;
-  //  }
-    
-  //  if(mouseX < 625 && mouseX > 525 && mouseY > 250 && mouseY < 280) {
-  //    binMag = 255;
-  //  }
-    
-  //}
-
   
-  if ( count == 0 )
+  
+  // avg out, what is this alpha value???
+  //float alpha = 0.595;
+  //binMag = (1-alpha) * tubeValues[n] + alpha * binMag;
+  
+  //Get Envelope Parameters From the UI
+  if (n < 10)
   {
-    //print("%d\n", binMag);
-    count = 250;
+    attackRatioTemp = attackRatio;
+    decayRatioTemp = decayRatio / 1.5;
   }
-  else
-  {
-    count--;
+  else {
+     decayRatioTemp = decayRatio;
+     attackRatioTemp = attackRatio;
   }
   
+  //Check the previous value to implement the envelope
+  if ( binMag < binMagPrevious[n] * decayRatioTemp ){
+    binMag = binMagPrevious[n] * decayRatioTemp;
+  }
+  else if ( binMag > binMagPrevious[n] * attackRatioTemp ){
+    //Need to protect against the initial value of binMag preventing any attack
+    if ( binMagPrevious[n] > 0.1 ){
+      binMag = binMagPrevious[n] * attackRatioTemp;
+    }
+  }
+  
+  //update binMagPrevious with new value;
+  binMagPrevious[n] = binMag;
   
   float binMagColour = binMag * 128;
   
@@ -104,32 +117,11 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
   fill(colour, binMagColour);
   rect(30+(100*(n%5)), 100*(floor(n/5)+1), 50, 50);
   fill(colour);
-  text("ID: " + n, 30+(100*(n%5)), 100*(floor(n/5)+1)-30);
-  text(fLB + "-", 30+(100*(n%5)), 100*(floor(n/5)+1)-20);
-  text(fUB + "hz", 30+(100*(n%5)), 100*(floor(n/5)+1)-10);
-  text("Gain:" + gain, 30+(100*(n%5)), 100*(floor(n/5)+1));
-  text("Out:" + binMag, 30+(100*(n%5)), 100*(floor(n/5)+1)+10);
-
-  //float red    = ((colour & 0x00FF0000) >> 16);
-  //float green  = ((colour & 0x0000FF00) >> 8);
-  //float blue   = ((colour & 0x000000FF) >> 0);
-  
-  //byte red_byte, green_byte, blue_byte;
-  
-  //if(binMag <= 255){
-  //    red_byte    = byte(red   * (binMag/255));
-  //    green_byte  = byte(green * (binMag/255));
-  //    blue_byte   = byte(blue  * (binMag/255));
-  //} else {
-  //    red_byte    = byte(red);
-  //    green_byte  = byte(green);
-  //    blue_byte   = byte(blue);
-  //}
-      
-  //myPort.write(red_byte);
-  //myPort.write(green_byte);
-  //myPort.write(blue_byte);
-  
+  //text("ID: " + n, 30+(100*(n%5)), 100*(floor(n/5)+1)-30);
+  //text(fLB + "-", 30+(100*(n%5)), 100*(floor(n/5)+1)-20);
+  //text(fUB + "hz", 30+(100*(n%5)), 100*(floor(n/5)+1)-10);
+  //text("Gain:" + gain, 30+(100*(n%5)), 100*(floor(n/5)+1));
+  //text("Out:" + binMag, 30+(100*(n%5)), 100*(floor(n/5)+1)+10);
   
   /* Calculate Value to Send to Tubes, Only Sending the Magnitude
    * Colour of the tubes is defined in the arduino sketch. */
@@ -144,15 +136,30 @@ float updateTube(int n, int fLB, int fUB, color colour, float gain){
 
 void setup() {
   
-  frameRate(50);
+  frameRate(200);
   printArray(Serial.list());
   //myPort = new Serial(this, Serial.list()[3], 115200);
 
-  size(660, 600);
+  size(700, 640);
   background(0);
-  
+ 
+ 
+  // Create a new instance of minim
   minim = new Minim(this);
+  //Get the minim audio input
   audio_in = minim.getLineIn();
+  //Create an instance of a minim FFT with the parameters of audio_in
+  minim_fft = new ddf.minim.analysis.FFT(audio_in.bufferSize(), audio_in.sampleRate());
+  //Set the window of the FFT (Accessing the static "NONE" as a static of the class not the object)
+  minim_fft.window(ddf.minim.analysis.FFT.NONE);
+  //Set the fft to provide 20 bands of equal energy for pink noise
+  minim_fft.logAverages(20, 2);
+  //We can now access the amplitude of each of these bands through the function
+  //getBand(n) where n is the band number (0 to N-1)
+  //Call minim_fft.forward(audio_in); to execute on each block.
+ 
+  
+  
   // a beat detection object song SOUND_ENERGY mode with a sensitivity of 10 milliseconds
   beat = new BeatDetect();
   beat.detectMode(BeatDetect.SOUND_ENERGY);
@@ -162,6 +169,10 @@ void setup() {
   // Create an Input stream which is routed into the Amplitude analyzer
   fft = new processing.sound.FFT(this, number_of_frequency_bands);
   sound_audio_in = new AudioIn(this, 0);
+  
+  
+  
+  //Create Frequency Bands of half an octave each
   
   
   // start the Audio Input
@@ -177,6 +188,11 @@ void draw() {
   
   background(0);
   fft.analyze(spectrum);
+  
+  //Run the minim FFT on the audio buffer
+  minim_fft.forward(audio_in.mix);
+  
+  
   
   sound_audio_in.amp(gain.getValue() / 100.0);
  
@@ -194,46 +210,36 @@ void draw() {
   {
   onsetGain = onsetGain * onset_gain_decay.getValue();
   }
-  //updateTube(int n, int fLB, int fUB, color colour, float gain)
-   //row 1
-  //float subMag = updateTube(0, 1500, 4000, highTubeColour, 10);
-  updateTube(1, 452, 640, highTubeColour, 20);
-  float redMag = updateTube(2, 640, 904, highTubeColour, 20);
-  float midMag = updateTube(3, 904, 1280, highTubeColour, 20);
-  float yellowMag = updateTube(4, 1280, 1806, highTubeColour, 20);
   
-  // 2
-  //float highMag = updateTube(5, 2000, 10000, highTubeColour, 30);
-  updateTube(6, 320, 452, midTubeColour, 20);
-  updateTube(7, 28, 40, midTubeColour, 20);
-  updateTube(8, 40, 56, midTubeColour, 20);
-  updateTube(9, 1806, 2554, highTubeColour, 20);
+  //Get Values for Envelope
+  decayRatio = decay_ratio.getValue();
+  attackRatio = attack_ratio.getValue();
   
-  // 3
-  //updateTube(10, 2000, 3300, highTubeColour, 30);
-  updateTube(11, 226, 320, midTubeColour, 20);
-  updateTube(12, 20 , 28, lowTubeColour, 20);
-  updateTube(13, 56, 80, midTubeColour, 20);
+  
+  ///////////////////
+  //Update Tubes
+  updateTube(0, 20 , 28, lowTubeColour, 20);
+  updateTube(1, 28, 40, midTubeColour, 20);
+  updateTube(2, 40, 56, midTubeColour, 20);
+  updateTube(3, 56, 80, midTubeColour, 20);
+  updateTube(4, 80, 113, midTubeColour, 20);
+  updateTube(5, 113, 160, midTubeColour, 20);
+  updateTube(6, 160, 226, midTubeColour, 20);
+  updateTube(7, 226, 320, midTubeColour, 20);
+  updateTube(8, 320, 452, midTubeColour, 20);
+  updateTube(9, 452, 640, highTubeColour, 20);
+  updateTube(10, 640, 904, highTubeColour, 20);
+  updateTube(11, 904, 1280, highTubeColour, 20);
+  updateTube(12, 1280, 1806, highTubeColour, 20);
+  updateTube(13, 1806, 2554, highTubeColour, 20);
   updateTube(14, 2554, 3612, highTubeColour, 20);
-  
-  //// 4
-  //updateTube(15, 2500, 3000, highTubeColour, 30);
-  updateTube(16, 160, 226, midTubeColour, 10);
-  updateTube(17, 113, 160, midTubeColour, 15);
-  updateTube(18, 80, 113, midTubeColour, 10);
-  updateTube(19, 3612, 5107, highTubeColour, 30);
-  
-  //// 5
-  //updateTube(20, 7000, 10000, highTubeColour, 10);
-  updateTube(21, 14440, 18000, highTubeColour, 20);
-  updateTube(22, 10212, 14440, highTubeColour, 20);
-  updateTube(23, 7222, 10212, highTubeColour, 20);
-  updateTube(24, 5107, 7222, highTubeColour, 20);
-  ////updateTube(25, 600, 1000, highTubeColour, 5);
-  ////updateTube(26, 750, 1200, highTubeColour, 7);
-  ////updateTube(27, 600, 700, highTubeColour, 8);
-  ////updateTube(28, 700, 1150, highTubeColour, 5);
-  ////updateTube(29, 1500, 5500, highTubeColour, 10);
+  updateTube(15, 3612, 5107, highTubeColour, 20);
+  updateTube(16, 5107, 7222, highTubeColour, 20);
+  updateTube(17, 7222, 10212, highTubeColour, 20);
+  updateTube(18, 10212, 14440, highTubeColour, 20);
+  updateTube(19, 14440, 18000, highTubeColour, 20);
+
+  //Draw FFT
   
   for(int i = 0; i < number_of_frequency_bands; i++){
   // The result of the FFT is normalized
@@ -244,6 +250,10 @@ void draw() {
   
 }
 
+
+/* As far as I understand it this will write the tubes vals to the port as soon as the arduino 
+ * is done outputting the previous ones. Because this runs upon receiving serial data. 
+ * The arduino code must implement a continuous write to trigger this event. */
 void serialEvent(Serial myPort) {
   myPort.write(tubeVals);  
   /* If colour has been updated then send colour command */
