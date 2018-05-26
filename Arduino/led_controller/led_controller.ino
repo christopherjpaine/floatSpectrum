@@ -18,30 +18,30 @@ int i = 0;
 int timer = 0;
 
 int hsv_vals[NUM_TUBES][3] = {
-  {240,180,255},
-  {240,180,255},
-  {240,180,255},
-  {240,180,255},
-  {240,180,255},
-  
-  {240,180,255},
-  {60,255,255},
-  {60,255,255},
-  {60,255,255},
-  {240,180,255},
-
-
-  {240,180,255},
-  {60,255,255},
   {0,255,255},
-  {60,255,255},
-  {240,180,255},
+  {13,255,255},
+  {26,255,255},
+  {39,255,255},
+  {52,255,255},
+  
+  {65,255,255},
+  {78,255,255},
+  {91,255,255},
+  {104,255,255},
+  {117,255,255},
 
-  {240,180,255},
-  {60,255,255},
-  {60,255,255},
-  {60,255,255},
-  {240,180,255},
+
+  {130,255,255},
+  {143,255,255},
+  {156,255,255},
+  {169,255,255},
+  {182,255,255},
+
+  {195,255,255},
+  {208,255,255},
+  {221,255,255},
+  {234,255,255},
+  {255,255,255},
 /*
   {240,180,255},
   {240,180,255},
@@ -84,33 +84,7 @@ void requestData() {
 void loop()
 {
 
-#ifdef RAINBOW_MODE
 
-  static int hueOffset = 0;
-  static int hue = 0;
-  
-  for(int j = 0; j < 150; j++){
-          cRGB colour;
-          hue = hueOffset + j;
-          if ( hue == 255 )
-          {
-            hue = 0;
-          }
-          colour.SetHSV((hue + j), 255, 127);
-            LED.set_crgb_at(j, colour);
-     }
-     if ( hueOffset == 255 )
-     {
-        hueOffset = 0;
-     }  
-     else
-     {
-        hueOffset++;
-     }
-
-     delay(100);
-
-#else   //NORMAL_MODE
 
     /* Delay while there is no data available to read */
     requestData();
@@ -129,22 +103,50 @@ void loop()
           Serial.readBytes(byteBuffer, NUM_TUBES);
           for(int i = 0; i < NUM_TUBES; i++){
             unsigned int brightness = (unsigned int)byteBuffer[i];
-            brightness = brightness * 2;
+            //Multipler is equal to contrast ratio
+            //brightness = brightness * 3;
             if(brightness > 255) brightness = 255; 
             hsv_vals[i][2] = brightness; // Update brightness
           }            
         }
 
+  int placement = 0;
+  static int offset = 0;
+  
   /* Prepare Colour to be sent using the LED library */
   for(int j = 0; j < NUM_TUBES; j++){
+        placement = j + offset;
+        if ( placement > 19 ){
+          placement = placement - 20;
+        }
         cRGB colour;
         colour.SetHSV(hsv_vals[j][0], hsv_vals[j][1], hsv_vals[j][2]);
+        //colour.SetHSV(rand(0,255), hsv_vals[j][1], hsv_vals[j][2]);
         for(int k = 0; k < 8; k++){
-          LED.set_crgb_at((8*j)+k, colour);
+          LED.set_crgb_at((8*placement)+k, colour);
         }
    }
 
-#endif
+   static int previousMillis = 0;
+
+   //read timer
+   int currentTime = millis();
+   
+   //Increase placement when te timer expires and handle wrap
+   //if ( (currentTime < previousMillis ){
+    
+   if ( ( previousMillis + 500) > currentTime )
+   {
+      offset = offset + 7;
+   }
+
+   //stop offset from running away
+   if ( offset > 19 ){
+    offset = offset - 20;
+   }
+
+   //update timer
+   previousMillis = millis();
 
   /* Send the data to the WS2812 */
   LED.sync();
