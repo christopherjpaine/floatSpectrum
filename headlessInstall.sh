@@ -6,6 +6,9 @@ sudo mv processing-4.0b8 /opt/
 sudo ln -s /opt/processing-4.0b8/processing* /usr/local/bin/
 rm processing-4.0b8$processingAbi.tgz
 
+# Ensure java runtime is available
+sudo apt-get install default-jre
+
 # Install frame buffer libraries for running headless
 sudo apt-get install xvfb libxrender1 libxtst6 libxi6
 
