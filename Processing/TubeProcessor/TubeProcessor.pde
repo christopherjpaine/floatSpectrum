@@ -138,7 +138,7 @@ void setup() {
   
   frameRate(200);
   printArray(Serial.list());
-  //myPort = new Serial(this, Serial.list()[3], 115200);
+  //myPort = new Serial(this, Serial.list()[0], 115200);
 
   size(700, 640);
   background(0);

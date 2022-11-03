@@ -1,5 +1,5 @@
 # Install processing.org for 32-bit Pi
-processingAbi=-linux-x64
+processingAbi=-linux-x64 # https://github.com/processing/processing4/releases/download/processing-1283-4.0b8/processing-4.0b8-linux-arm32.tgz
 wget -nc https://github.com/processing/processing4/releases/download/processing-1283-4.0b8/processing-4.0b8$processingAbi.tgz
 tar zxf processing-4.0b8$processingAbi.tgz
 sudo mv processing-4.0b8 /opt/

@@ -5,9 +5,10 @@
 
 //#define RAINBOW_MODE
 
-#define DATA_PIN    7
-#define NUM_LEDS    150
+#define DATA_PIN    8
+#define NUM_LEDS    100
 #define NUM_TUBES   20
+#define PER_TUBE    2
 
 WS2812 LED(NUM_LEDS); 
 
@@ -116,14 +117,14 @@ void loop()
   /* Prepare Colour to be sent using the LED library */
   for(int j = 0; j < NUM_TUBES; j++){
         placement = j + offset;
-        if ( placement > 19 ){
-          placement = placement - 20;
+        if ( placement >= NUM_TUBES ){
+          placement = placement - NUM_TUBES;
         }
         cRGB colour;
         colour.SetHSV(hsv_vals[j][0], hsv_vals[j][1], hsv_vals[j][2]);
         //colour.SetHSV(rand(0,255), hsv_vals[j][1], hsv_vals[j][2]);
-        for(int k = 0; k < 8; k++){
-          LED.set_crgb_at((8*placement)+k, colour);
+        for(int k = 0; k < PER_TUBE; k++){
+          LED.set_crgb_at((PER_TUBE*placement)+k, colour);
         }
    }
 
@@ -135,15 +136,15 @@ void loop()
    //Increase placement when te timer expires and handle wrap
    //if ( (currentTime < previousMillis ){
     
-   if ( ( previousMillis + 500) > currentTime )
-   {
-      offset = offset + 7;
-   }
+  //  if ( ( previousMillis + 10000) > currentTime )
+  //  {
+  //     offset = offset + 7;
+  //  }
 
-   //stop offset from running away
-   if ( offset > 19 ){
-    offset = offset - 20;
-   }
+  //  //stop offset from running away
+  //  if ( offset >= NUM_TUBES ){
+  //   offset = offset - NUM_TUBES;
+  //  }
 
    //update timer
    previousMillis = millis();

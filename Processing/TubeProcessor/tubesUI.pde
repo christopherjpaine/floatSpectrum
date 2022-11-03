@@ -26,15 +26,15 @@ void UI_Init ()
             ;
                
   onset_gain_decay = cp5.addKnob("onset gain decay")
-            .setRange(0.1, 0.95)
-            .setValue(0.78)
+            .setRange(0.1, 0.99)
+            .setValue(0.99)
             .setPosition(525,270)
             .setRadius(50)
             .setDragDirection(Knob.VERTICAL)
             ;
           
   decay_ratio = cp5.addKnob("Decay Ratio")
-            .setRange(0.1, 0.95)
+            .setRange(0.1, 0.99)
             .setValue(0.76)
             .setPosition(525, 390)
             .setRadius(50)
