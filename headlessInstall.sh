@@ -13,7 +13,7 @@ sudo apt-get install default-jre
 sudo apt-get install xvfb libxrender1 libxtst6 libxi6
 
 # Download dependencies and move to 
-processingSketchbook=~/Code/processingSketchbook # ~/sketchbook
+processingSketchbook=~/code/processingSketchbook # ~/sketchbook
 wget -nc http://code.compartmental.net/minim/distro/minim-2.2.2.zip
 unzip minim-2.2.2.zip
 mv minim $processingSketchbook/libraries/
